@@ -73,6 +73,8 @@ AUTOTUNE_WARMUP_STEPS = 2
 AUTOTUNE_MEASURE_STEPS = 3
 AUTOTUNE_MAX_MEMORY_FRACTION = 0.90
 AUTOTUNE_CACHE_VERSION = "gpu-profile-v1"
+CONSUMER_16GB_FLOOR = 15.5
+CONSUMER_24GB_FLOOR = 23.5
 
 
 def _get_gpu_peak_flops(gpu_name):
@@ -114,7 +116,7 @@ def _resolve_gpu_profile(gpu_name, capability, gpu_vram_gb, is_windows):
     supported_consumer = is_rtx and not is_laptop and arch is not None and gpu_vram_gb >= 10.0
 
     if supported_consumer:
-        if gpu_vram_gb < 16.0:
+        if gpu_vram_gb < CONSUMER_16GB_FLOOR:
             return GpuProfile(
                 name=f"{arch}-10-12gb",
                 is_supported_consumer=True,
@@ -123,7 +125,7 @@ def _resolve_gpu_profile(gpu_name, capability, gpu_vram_gb, is_windows):
                 checkpoint_modes=(True,),
                 default_checkpointing=True,
             )
-        if gpu_vram_gb < 24.0:
+        if gpu_vram_gb < CONSUMER_24GB_FLOOR:
             return GpuProfile(
                 name=f"{arch}-16gb",
                 is_supported_consumer=True,
@@ -205,6 +207,7 @@ def _make_autotune_cache_key(runtime):
     return "|".join(
         [
             runtime.gpu_name,
+            runtime.gpu_profile.name,
             cc,
             str(runtime.gpu_total_memory_bytes),
             torch.__version__,
